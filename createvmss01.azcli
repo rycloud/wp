@@ -19,8 +19,8 @@ az vmss create \
   --vm-sku Standard_F4s \
   --instance-count 3 \
   --upgrade-policy-mode automatic \
-  --admin-username azureuser \
-  --admin-password "P@ssword123!"\
+  --admin-username adminuser \
+  --admin-password "PASSWORD"\
   --storage-sku StandardSSD_LRS \
   --data-disk-sizes-gb 64 128 \
   --public-ip-per-vm \
