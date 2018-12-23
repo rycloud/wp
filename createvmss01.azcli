@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Create a resource group
+az group create --name myResourceGroup --location eastus
+
+#创建网络安全组NSG
+az network nsg create --resource-group myResourceGroup --name mynsg01
+#Create a network security group rule for port 22.
+az network nsg rule create --resource-group myResourceGroup --nsg-name mynsg01 \
+  --name myNetworkSecurityGroupRuleSSH \
+  --protocol tcp --direction inbound --source-address-prefix '*' --source-port-range '*'  \
+  --destination-address-prefix '*' --destination-port-range 22 --access allow --priority 1000
+
+#创建带有2块数据盘(64G, 128G)的VM规模集，3个VM实例，每个VM有公网IP、NGS，默认不用LB
+az vmss create \
+  --resource-group myResourceGroup \
+  --name myScaleSet \
+  --image UbuntuLTS \
+  --vm-sku Standard_F4s \
+  --instance-count 3 \
+  --upgrade-policy-mode automatic \
+  --admin-username azureuser \
+  --admin-password "P@ssword123!"\
+  --storage-sku StandardSSD_LRS \
+  --data-disk-sizes-gb 64 128 \
+  --public-ip-per-vm \
+  --nsg mynsg01 \
+  --lb "" 
+
+# Install the Azure Custom Script Extension to run a script that prepares the data disks
+az vmss extension set \
+  --publisher Microsoft.Azure.Extensions \
+  --version 2.0 \
+  --name CustomScript \
+  --resource-group myResourceGroup \
+  --vmss-name myScaleSet \
+  --settings '{"fileUris":["https://raw.githubusercontent.com/Azure-Samples/compute-automation-configurations/master/prepare_vm_disks.sh"],"commandToExecute":"./prepare_vm_disks.sh"}'
+
+
+# https://docs.microsoft.com/zh-cn/azure/virtual-machine-scale-sets/scripts/cli-sample-attach-disks?toc=%2fcli%2fmodule%2ftoc.json
